@@ -1,0 +1,9 @@
+*.pdf
+/.metadata/
+*.exe
+/Networks Project/.settings
+*.cproject
+Networks Project/.nedexclusions
+Networks Project/.nedfolders
+Networks Project/.oppbuildspec
+Networks Project/.project
