@@ -7,3 +7,6 @@ Networks Project/.nedexclusions
 Networks Project/.nedfolders
 Networks Project/.oppbuildspec
 Networks Project/.project
+.vscode
+.settings
+out
