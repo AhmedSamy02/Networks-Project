@@ -1,0 +1,14 @@
+Uploading payload=[The biological function of $/a flower  ] and seq_num =[0] to the network layer
+Uploading payload=[A flower, sometimes ] and seq_num =[1] to the network layer
+Uploading payload=[known as a bloom or blossom in flowering plants] and seq_num =[2] to the network layer
+Uploading payload=[is the reproductive$ structure found  also called/ angiosperms$).] and seq_num =[3] to the network layer
+Uploading payload=[(plants of the division Magnoliophyta,  is to facilitate reproduction,] and seq_num =[4] to the network layer
+Uploading payload=[usually by providing a mechanism for Flowers may facilitate outcrossing$] and seq_num =[5] to the network layer
+Uploading payload=[$$the union of sperm with eggs.] and seq_num =[6] to the network layer
+Uploading payload=[A flower, sometimes ] and seq_num =[7] to the network layer
+Uploading payload=[known as a bloom or blossom in flowering plants] and seq_num =[0] to the network layer
+Uploading payload=[is the reproductive$ structure found  also called/ angiosperms$).] and seq_num =[1] to the network layer
+Uploading payload=[(plants of the division Magnoliophyta,  is to facilitate reproduction,] and seq_num =[2] to the network layer
+Uploading payload=[The biological function of $/a flower  ] and seq_num =[3] to the network layer
+Uploading payload=[usually by providing a mechanism for Flowers may facilitate outcrossing$] and seq_num =[4] to the network layer
+Uploading payload=[$$the union of sperm with eggs.] and seq_num =[5] to the network layer

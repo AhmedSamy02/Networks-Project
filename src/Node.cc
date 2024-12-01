@@ -18,6 +18,7 @@
 #include "crc.h"
 #include "framing.h"
 #include "file_reader.h"
+#include "file_writer.h"
 #include <iostream>
 #define MAX_SEQ 7
 #define WINDOW_SIZE ((MAX_SEQ + 1) / 2)
@@ -36,6 +37,7 @@ bool sender = 0;
 int nBuffered = 0;
 bool ack_timer = false;
 bool no_nak = true;
+int data_length = 0;
 
 std::vector<bool> timer_buffer;
 std::vector<bool> isArrived;
@@ -101,7 +103,9 @@ void handle_message_timeout(cMessage *msg, Node *node) {
     }
 }
 void handle_ack_timeout(Node *node) {
-    send_frame(ACK, 0, frame_expected, out_buf, node);
+    if(ack_timer){
+        send_frame(ACK, 0, frame_expected, out_buf, node);
+    }
 }
 
 Define_Module(Node);
@@ -117,9 +121,11 @@ void Node::initialize() {
     if (!number) {                        // TODO handle who is the receiver
         auto delay_time = 1; // must be given from the coordinator
         data = read_file(number);
+        EV<<data[4].second<<endl;
         sender = true;
         scheduleAt(simTime() + delay_time, new cMessage("", 2));
         i = 0;
+        data_length = data.size();
     }
 }
 
@@ -143,6 +149,7 @@ void Node::handleMessage(cMessage *msg) {
                     send_frame(DATA, next_frame_to_send, frame_expected,
                             out_buf, this);
                     inc(next_frame_to_send);
+                    EV<<"Next Frame to send"<<next_frame_to_send<<endl;
                     i++;
                 }
             }
@@ -214,6 +221,7 @@ void Node::handleMessage(cMessage *msg) {
                 std::string receivedMessage = deframing(
                         in_buf[frame_expected % WINDOW_SIZE]);
                 // TODO: Do what you want with this message
+                write_frame_received(receivedMessage,std::to_string( seqNum));
 
                 no_nak = true;
                 isArrived[frame_expected % WINDOW_SIZE] = false;
@@ -251,13 +259,14 @@ void Node::handleMessage(cMessage *msg) {
     }
     // Send message if any
     if (sender) {
-        if (nBuffered < WINDOW_SIZE) {
+        if (nBuffered < WINDOW_SIZE && i <data_length) {
             nBuffered++;
-            i++;
             // TODO: Handle delays here
             out_buf[next_frame_to_send % WINDOW_SIZE] = framing(data[i].second);
             send_frame(DATA, next_frame_to_send, frame_expected, out_buf, this);
             inc(next_frame_to_send);
+            EV<<"Next Frame to send"<<next_frame_to_send<<endl;
+            i++;
         }
     }
 }

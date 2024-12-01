@@ -1,7 +1,7 @@
 #include <iostream>
 using namespace std;
 const char FLAG = '$';
-const char ESC = '\\';
+const char ESC = '/';
 string framing(string s)
 {
     string s1 = "";
@@ -20,7 +20,7 @@ string framing(string s)
 
 string deframing(string s){
     string s1 = "";
-    for (size_t i = 1; i < s.length()-1; i++)
+    for (size_t i = 1; i < s.length()-2; i++)
     {
         if (s[i] == ESC)
         {
@@ -34,7 +34,7 @@ string deframing(string s){
 int main(int argc, char const *argv[])
 {
     string s;
-    cin >> s;
+    getline(cin,s);
     auto s1 = framing(s);
     cout << framing(s) << endl;
     auto s2 = deframing(s1);

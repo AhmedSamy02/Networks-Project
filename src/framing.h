@@ -20,7 +20,7 @@ string framing(string s)
 
 string deframing(string s){
     string s1 = "";
-    for (size_t i = 1; i < s.length()-1; i++)
+    for (size_t i = 1; i < s.length()-2; i++)
     {
         if (s[i] == ESC)
         {
