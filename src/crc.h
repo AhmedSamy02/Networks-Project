@@ -1,5 +1,6 @@
 #include <iostream>
 #include <bitset>
+#include <string.h>
 using namespace std;
 const string GENERATOR = "10101010";
 const int GENERATOR_LENGTH = 8;
@@ -12,17 +13,19 @@ string messageToBinary(string const message)
     }
     return binaryMessage;
 }
-string binaryToMessage(string const binary){
+string binaryToMessage(string const binary)
+{
     string message = "";
     int binaryLength = binary.length();
-    for (int i = 0; i < binaryLength; i+=8)
+    for (int i = 0; i < binaryLength; i += 8)
     {
-        message+= char(bitset<8>(binary.substr(i, 8)).to_ulong());
+        message += char(bitset<8>(binary.substr(i, 8)).to_ulong());
     }
     return message;
 }
 string computeCRC(string const message, bool sender = true)
 {
+    cout << "Message in compute = " << binaryToMessage(message) << endl;
     int m = message.length();
     string encodedMessage = message;
     if (sender)
@@ -33,6 +36,7 @@ string computeCRC(string const message, bool sender = true)
         }
     }
 
+
     int newMessageLength = encodedMessage.length();
     for (int i = 0; i <= newMessageLength - GENERATOR_LENGTH;)
     {
@@ -42,52 +46,65 @@ string computeCRC(string const message, bool sender = true)
         for (; i < newMessageLength && encodedMessage[i] != '1'; i++)
             ;
     }
+    // cout << encodedMessage << endl;
     string remainder = encodedMessage.substr(newMessageLength - GENERATOR_LENGTH + 1);
+    cout << remainder << endl;
     return remainder;
 }
 // For Sender
 string encodeMessage(string const message)
 {
+
     return message + computeCRC(message);
 }
 // For Receiver
-bool checkMessage(string const message)
+bool checkMessage(string const message, char trailer)
 {
-    int messageLength = message.length();
-    string computedRemainder = computeCRC(message, false);
-    for (auto letter : computedRemainder)
+    cout << "Message = " << message << endl;
+    string computedRemainder = "0" + computeCRC(message, true);
+    string temp = bitset<8>(trailer).to_string();
+    cout << "Computer Remainder  = " << computedRemainder << endl;
+    cout << "Temp = " << temp << endl;
+
+    if (strcmp(computedRemainder.c_str(), temp.c_str())==0)
     {
-        if (letter != '0')
-        {
-            return false;
-        }
+        return true;
     }
-    return true;
+    // for (auto letter : computedRemainder)
+    // {
+    //     if (letter != '0')
+    //     {
+    //         return false;
+    //     }
+    // }
+    return false;
 }
-string getMessageFromEncoded(string const encodedMessage){
-    return encodedMessage.substr(0,encodedMessage.length() - GENERATOR_LENGTH + 1);
+string getMessageFromEncoded(string const encodedMessage)
+{
+    return encodedMessage.substr(0, encodedMessage.length() - GENERATOR_LENGTH + 1);
 }
 
-//int main()
-//{
-//    string s;
-//    cin >> s;
-//    s = messageToBinary(s);
-//    cout << s << endl;
-//    // Sender
-//    string encodedMessage = encodeMessage(s);
-//    // Adding random error
-//    // int randomLocation = rand() % encodedMessage.length();
-//    // encodedMessage[randomLocation] = encodedMessage[randomLocation] == '0' ? '1' : '0';
-//    // Receiver
-//    if (!checkMessage(encodedMessage))
-//    {
-//        cout << "An error ocurred in message";
-//    }
-//    else
-//    {
-//        cout << "The message is received correctly"<<endl;
-//        cout << binaryToMessage(getMessageFromEncoded(encodedMessage));
-//    }
-//    return 0;
-//}
+// int main()
+// {
+//     string s;
+//     cin >> s;
+//     s = messageToBinary(s);
+//     cout << s << endl;
+//     // Sender
+//     string encodedMessage = encodeMessage(s);
+//     cout << encodedMessage << endl;
+//     // Adding random error
+//     // int randomLocation = rand() % encodedMessage.length();
+//     // encodedMessage[randomLocation] = encodedMessage[randomLocation] == '0' ? '1' : '0';
+//     // Receiver
+//     if (!checkMessage("0100000101001000",'.'))
+//     {
+//         cout << "An error ocurred in message";
+//     }
+//     else
+//     {
+//         cout << "The message is received correctly" << endl;
+//         cout << binaryToMessage(getMessageFromEncoded(encodedMessage));
+//     }
+//     return 0;
+// }

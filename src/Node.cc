@@ -18,11 +18,11 @@
 #include "crc.h"
 #include "framing.h"
 #include "file_reader.h"
-#include<iostream>
+#include <iostream>
 #define MAX_SEQ 7
-#define WINDOW_SIZE 4
-#define TIMEOUT_THRESHOLD 5     // seconds
-#define ACK_TIMEOUT_THRESHOLD 8 // seconds
+#define WINDOW_SIZE ((MAX_SEQ + 1) / 2)
+#define TIMEOUT_THRESHOLD 15      // seconds
+#define ACK_TIMEOUT_THRESHOLD 20 // seconds
 
 enum DATA_KIND {
     NACK, ACK, DATA
@@ -55,7 +55,7 @@ void start_timer(int num, Node *node) {
     node->scheduleAt(simTime() + TIMEOUT_THRESHOLD, selfMessage);
 }
 void stop_timer(int num) {
-    timer_buffer[num] = -1;
+    timer_buffer[num] = 0;
 }
 void start_ack_timer(Node *node) {
     ack_timer = true;
@@ -65,11 +65,11 @@ void start_ack_timer(Node *node) {
 void stop_ack_timer() {
     ack_timer = false;
 }
-static bool between(int a, int b, int c) {
+bool between(int a, int b, int c) {
     return ((a <= b) && (b < c)) || ((c < a) && (a <= b))
             || ((b < c) && (c < a));
 }
-static void send_frame(DATA_KIND type, int frame_number, int frame_expected,
+void send_frame(DATA_KIND type, int frame_number, int frame_expected,
         std::vector<std::string> buffer, Node *node) {
     MyMessage_Base *msg = new MyMessage_Base();
     msg->setType(type);
@@ -80,7 +80,10 @@ static void send_frame(DATA_KIND type, int frame_number, int frame_expected,
         msg->setPayload(frame.c_str());
     }
     msg->setHeader(frame_number);
-    msg->setAck_number((frame_expected + MAX_SEQ) % (MAX_SEQ + 1));
+    msg->setAck_number(frame_expected );
+    EV << msg->getType() << ' ' << msg->getAck_number() << ' '
+              << msg->getHeader() << ' ' << msg->getPayload() << ' '
+              << msg->getTrailer() << ' ' << endl;
     if (type == NACK) // NACK
             {
         no_nak = false;
@@ -111,14 +114,13 @@ void Node::initialize() {
     in_buf = std::vector<std::string>(WINDOW_SIZE);
     auto number = this->getName()[5] == '0' ? false : true;
 
-    if (!number) { //TODO handle who is the receiver
-        auto delay_time = 1; //must be given from the coordinator
+    if (!number) {                        // TODO handle who is the receiver
+        auto delay_time = 1; // must be given from the coordinator
         data = read_file(number);
         sender = true;
         scheduleAt(simTime() + delay_time, new cMessage("", 2));
         i = 0;
     }
-
 }
 
 void Node::handleMessage(cMessage *msg) {
@@ -128,18 +130,11 @@ void Node::handleMessage(cMessage *msg) {
         // Either ack or message timeout
         if (kind == 0) {
             handle_message_timeout(msg, this);
-            cancelAndDelete(msg);
-            return;
-        }
-
-        else if (kind == 1) {
+        } else if (kind == 1) {
             handle_ack_timeout(this);
-            cancelAndDelete(msg);
-            return;
         } else {
             if (sender) {
-
-                if (nBuffered < WINDOW_SIZE) {
+                while (nBuffered < WINDOW_SIZE) {
                     nBuffered++;
                     // TODO: Handle delays here
                     out_buf[next_frame_to_send % WINDOW_SIZE] = framing(
@@ -148,21 +143,23 @@ void Node::handleMessage(cMessage *msg) {
                     send_frame(DATA, next_frame_to_send, frame_expected,
                             out_buf, this);
                     inc(next_frame_to_send);
-                    cancelAndDelete(msg);
-                    return;
+                    i++;
                 }
             }
         }
-
+        cancelAndDelete(msg);
+        return;
     }
-
     MyMessage_Base *mmsg = check_and_cast<MyMessage_Base*>(msg);
     int kind = mmsg->getType();
     int ack_number = mmsg->getAck_number();
     int seqNum = mmsg->getHeader();
     std::string payload = mmsg->getPayload();
+    EV << mmsg->getTrailer() << endl;
     char trailer = mmsg->getTrailer();
-    cancelAndDelete(mmsg);
+    EV << kind << ' ' << ack_number << ' ' << seqNum << ' ' << payload << ' '
+              << trailer << ' ' << endl;
+    cancelAndDelete(msg);
     if (kind == DATA) {
 
         if (seqNum != frame_expected && no_nak) {
@@ -171,9 +168,13 @@ void Node::handleMessage(cMessage *msg) {
             start_ack_timer(this);
         }
         // Message check
-
-
-        if (!checkMessage(payload + std::to_string(trailer))) {
+        EV << payload << " " << trailer << endl;
+//        std::string temp = payload;
+//        temp+=trailer;
+//        EV << temp<<endl;
+        if (!checkMessage(messageToBinary(payload), trailer)) {
+//            EV << payload << " " << trailer << endl;
+//            EV << payload + trailer;
             if (no_nak) {
                 send_frame(NACK, 0, frame_expected, out_buf, this);
                 return;
@@ -181,20 +182,57 @@ void Node::handleMessage(cMessage *msg) {
         }
         if (between(frame_expected, seqNum, too_far)
                 && !isArrived[seqNum % WINDOW_SIZE]) {
-            isArrived[seqNum % WINDOW_SIZE] = true;
             std::string receivedFrame = binaryToMessage(
                     getMessageFromEncoded(messageToBinary(payload + trailer)));
+            isArrived[seqNum % WINDOW_SIZE] = true;
             in_buf[seqNum % WINDOW_SIZE] = receivedFrame;
+//            EV << receivedFrame << endl;
+//            int x = frame_expected;
+//            int y = too_far;
+//            while (x != y) {
+//                if (!isArrived[x % WINDOW_SIZE]) {
+//                    if (between(seqNum, x, too_far)) {
+//                        send_frame(ACK, frame_expected, x, out_buf, this);
+//                    } else {
+//                        send_frame(NACK, frame_expected, x, out_buf, this);
+//                    }
+//                    frame_expected = (x) % WINDOW_SIZE;
+//                    too_far = (frame_expected + WINDOW_SIZE) % WINDOW_SIZE;
+//                    break;
+//                }
+//                inc(x);
+//            }
+//            if (x == y && isArrived[y]) {
+//                frame_expected = (y + 1) % WINDOW_SIZE;
+//                too_far = (frame_expected + WINDOW_SIZE) % WINDOW_SIZE;
+//            }
+//            start_ack_timer(this);
+
+            EV << "Before while" << endl;
             while (isArrived[frame_expected % WINDOW_SIZE]) {
-                std::string receivedMessage = deframing(receivedFrame);
+                EV << "Inside while" << endl;
+                std::string receivedMessage = deframing(
+                        in_buf[frame_expected % WINDOW_SIZE]);
                 // TODO: Do what you want with this message
-                EV << receivedFrame << endl;
+
                 no_nak = true;
                 isArrived[frame_expected % WINDOW_SIZE] = false;
                 inc(frame_expected);
+                EV << "Expected = " << frame_expected << endl;
+//                frame_expected = (frame_expected + 1) % (MAX_SEQ+1);
+//                EV << "Expected = " << frame_expected << endl;
                 inc(too_far);
-
+                EV << "too_far = " << too_far << endl;
                 start_ack_timer(this);
+            }
+
+            EV << "After while ";
+
+            if (!between(frame_expected, seqNum, too_far)) {
+                EV << "Expected = " << frame_expected << endl;
+                send_frame(ACK, seqNum, frame_expected, out_buf, this);
+            } else {
+                send_frame(NACK, seqNum, frame_expected, out_buf, this);
             }
         }
     }
@@ -202,7 +240,7 @@ void Node::handleMessage(cMessage *msg) {
     if (kind == NACK
             && between(ack_expected, (ack_number + 1) % (MAX_SEQ + 1),
                     next_frame_to_send)) {
-        send_frame(DATA, (ack_number + 1) % (MAX_SEQ + 1), frame_expected,
+        send_frame(DATA, (ack_number - WINDOW_SIZE) % (WINDOW_SIZE), frame_expected,
                 out_buf, this);
     }
 
@@ -211,7 +249,7 @@ void Node::handleMessage(cMessage *msg) {
         stop_timer(ack_expected % WINDOW_SIZE);
         inc(ack_expected);
     }
-    //Send message if any
+    // Send message if any
     if (sender) {
         if (nBuffered < WINDOW_SIZE) {
             nBuffered++;
@@ -222,5 +260,4 @@ void Node::handleMessage(cMessage *msg) {
             inc(next_frame_to_send);
         }
     }
-
 }

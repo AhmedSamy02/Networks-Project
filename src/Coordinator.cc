@@ -14,15 +14,21 @@
 // 
 
 #include "Coordinator.h"
+#include "file_reader.h"
 
 Define_Module(Coordinator);
 
-void Coordinator::initialize()
-{
+bool node_to_start;
+void Coordinator::initialize() {
     // TODO - Generated method body
+//    auto p = coordinator_file_read();
+//    node_to_start = p.first;
+//    auto time_to_start = p.second - 1 >= 0 ? p.second - 1 : 0;
+//    scheduleAt(simTime() + p.second - 1, new cMessage(""));
 }
 
-void Coordinator::handleMessage(cMessage *msg)
-{
+void Coordinator::handleMessage(cMessage *msg) {
     // TODO - Generated method body
+
+
 }
