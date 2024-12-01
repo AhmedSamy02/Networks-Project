@@ -11,14 +11,14 @@ network Network
 {
     @display("bgb=831,386");
     submodules:
-        node0: Node {
+        Node_0: Node {
             @display("p=210,116");
         }
-        node1: Node {
+        Node_1: Node {
             @display("p=422,116");
         }
     connections:
-        node0.out --> IdealChannel --> node1.in;
-        node1.out --> IdealChannel --> node0.in;
+        Node_0.out --> IdealChannel --> Node_1.in;
+        Node_1.out --> IdealChannel --> Node_0.in;
 }
 

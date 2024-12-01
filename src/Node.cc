@@ -17,10 +17,12 @@
 #include <vector>
 #include "crc.h"
 #include "framing.h"
+#include "file_reader.h"
+#include<iostream>
 #define MAX_SEQ 7
 #define WINDOW_SIZE 4
-#define TIMEOUT_THRESHOLD 3     // seconds
-#define ACK_TIMEOUT_THRESHOLD 5 // seconds
+#define TIMEOUT_THRESHOLD 5     // seconds
+#define ACK_TIMEOUT_THRESHOLD 8 // seconds
 
 enum DATA_KIND {
     NACK, ACK, DATA
@@ -29,8 +31,8 @@ int ack_expected = 0;
 int next_frame_to_send = 0;
 int frame_expected = 0;
 int too_far = WINDOW_SIZE;
-// int i = 0;
-// bool sender = 0;
+int i;
+bool sender = 0;
 int nBuffered = 0;
 bool ack_timer = false;
 bool no_nak = true;
@@ -39,6 +41,13 @@ std::vector<bool> timer_buffer;
 std::vector<bool> isArrived;
 std::vector<std::string> out_buf;
 std::vector<std::string> in_buf;
+std::vector<std::pair<std::string, std::string>> data;
+void inc(int &k) {
+    if (k < MAX_SEQ)
+        k = k + 1;
+    else
+        k = 0;
+}
 void start_timer(int num, Node *node) {
     timer_buffer[num] = true;
     char c = char(num);
@@ -98,28 +107,73 @@ void Node::initialize() {
     // Timer initialization
     timer_buffer = std::vector<bool>(WINDOW_SIZE, false);
     isArrived = std::vector<bool>(WINDOW_SIZE, false);
+    out_buf = std::vector<std::string>(WINDOW_SIZE);
+    in_buf = std::vector<std::string>(WINDOW_SIZE);
+    auto number = this->getName()[5] == '0' ? false : true;
+
+    if (!number) { //TODO handle who is the receiver
+        auto delay_time = 1; //must be given from the coordinator
+        data = read_file(number);
+        sender = true;
+        scheduleAt(simTime() + delay_time, new cMessage("", 2));
+        i = 0;
+    }
+
 }
 
 void Node::handleMessage(cMessage *msg) {
     if (msg->isSelfMessage()) {
+
+        auto kind = msg->getKind();
         // Either ack or message timeout
-        if (msg->getKind() == 0)
+        if (kind == 0) {
             handle_message_timeout(msg, this);
-        else
+            cancelAndDelete(msg);
+            return;
+        }
+
+        else if (kind == 1) {
             handle_ack_timeout(this);
-        return;
+            cancelAndDelete(msg);
+            return;
+        } else {
+            if (sender) {
+
+                if (nBuffered < WINDOW_SIZE) {
+                    nBuffered++;
+                    // TODO: Handle delays here
+                    out_buf[next_frame_to_send % WINDOW_SIZE] = framing(
+                            data[i].second);
+
+                    send_frame(DATA, next_frame_to_send, frame_expected,
+                            out_buf, this);
+                    inc(next_frame_to_send);
+                    cancelAndDelete(msg);
+                    return;
+                }
+            }
+        }
+
     }
+
     MyMessage_Base *mmsg = check_and_cast<MyMessage_Base*>(msg);
     int kind = mmsg->getType();
+    int ack_number = mmsg->getAck_number();
+    int seqNum = mmsg->getHeader();
+    std::string payload = mmsg->getPayload();
+    char trailer = mmsg->getTrailer();
+    cancelAndDelete(mmsg);
     if (kind == DATA) {
-        int seqNum = mmsg->getHeader();
+
         if (seqNum != frame_expected && no_nak) {
             send_frame(NACK, 0, frame_expected, out_buf, this);
+        } else {
+            start_ack_timer(this);
         }
         // Message check
-        std::string payload = mmsg->getPayload();
-        char trailer = mmsg->getTrailer();
-        if (!checkMessage(payload + trailer)) {
+
+
+        if (!checkMessage(payload + std::to_string(trailer))) {
             if (no_nak) {
                 send_frame(NACK, 0, frame_expected, out_buf, this);
                 return;
@@ -134,23 +188,39 @@ void Node::handleMessage(cMessage *msg) {
             while (isArrived[frame_expected % WINDOW_SIZE]) {
                 std::string receivedMessage = deframing(receivedFrame);
                 // TODO: Do what you want with this message
+                EV << receivedFrame << endl;
                 no_nak = true;
                 isArrived[frame_expected % WINDOW_SIZE] = false;
-                frame_expected++;
-                too_far++;
+                inc(frame_expected);
+                inc(too_far);
+
                 start_ack_timer(this);
             }
         }
     }
-    int ack_number = mmsg->getAck_number();
+
     if (kind == NACK
             && between(ack_expected, (ack_number + 1) % (MAX_SEQ + 1),
-                    next_frame_to_send))
+                    next_frame_to_send)) {
         send_frame(DATA, (ack_number + 1) % (MAX_SEQ + 1), frame_expected,
                 out_buf, this);
+    }
+
     while (between(ack_expected, ack_number, next_frame_to_send)) {
         nBuffered--;
         stop_timer(ack_expected % WINDOW_SIZE);
-        ack_expected++;
+        inc(ack_expected);
     }
+    //Send message if any
+    if (sender) {
+        if (nBuffered < WINDOW_SIZE) {
+            nBuffered++;
+            i++;
+            // TODO: Handle delays here
+            out_buf[next_frame_to_send % WINDOW_SIZE] = framing(data[i].second);
+            send_frame(DATA, next_frame_to_send, frame_expected, out_buf, this);
+            inc(next_frame_to_send);
+        }
+    }
+
 }

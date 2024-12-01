@@ -23,7 +23,7 @@ std::vector<std::pair<std::string, std::string>> read_file(bool node_number)
     std::string text = "";
     while (std::getline(in, text))
     {
-        std::pair p = std::pair<std::string, std::string>(text.substr(0, 4), text.substr(5));
+        auto p = std::pair<std::string, std::string>(text.substr(0, 4), text.substr(5));
         temp.push_back(p);
     }
     in.close();
