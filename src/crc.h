@@ -68,26 +68,26 @@ string getMessageFromEncoded(string const encodedMessage){
     return encodedMessage.substr(0,encodedMessage.length() - GENERATOR_LENGTH + 1);
 }
 
-int main()
-{
-    string s;
-    cin >> s;
-    s = messageToBinary(s);
-    cout << s << endl;
-    // Sender
-    string encodedMessage = encodeMessage(s);
-    // Adding random error
-    // int randomLocation = rand() % encodedMessage.length();
-    // encodedMessage[randomLocation] = encodedMessage[randomLocation] == '0' ? '1' : '0';
-    // Receiver
-    if (!checkMessage(encodedMessage))
-    {
-        cout << "An error ocurred in message";
-    }
-    else
-    {
-        cout << "The message is received correctly"<<endl;
-        cout << binaryToMessage(getMessageFromEncoded(encodedMessage));
-    }
-    return 0;
-}
+//int main()
+//{
+//    string s;
+//    cin >> s;
+//    s = messageToBinary(s);
+//    cout << s << endl;
+//    // Sender
+//    string encodedMessage = encodeMessage(s);
+//    // Adding random error
+//    // int randomLocation = rand() % encodedMessage.length();
+//    // encodedMessage[randomLocation] = encodedMessage[randomLocation] == '0' ? '1' : '0';
+//    // Receiver
+//    if (!checkMessage(encodedMessage))
+//    {
+//        cout << "An error ocurred in message";
+//    }
+//    else
+//    {
+//        cout << "The message is received correctly"<<endl;
+//        cout << binaryToMessage(getMessageFromEncoded(encodedMessage));
+//    }
+//    return 0;
+//}
