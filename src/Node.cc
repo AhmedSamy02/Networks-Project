@@ -33,6 +33,7 @@ int next_frame_to_send = 0;
 int frame_expected = 0;
 int too_far = WINDOW_SIZE;
 int i;
+std::string id;
 bool sender = 0;
 int nBuffered = 0;
 bool ack_timer = false;
@@ -78,17 +79,26 @@ void send_frame(DATA_KIND type, int frame_number, int frame_expected,
     if (type == DATA) // Data
             {
         std::string frame = buffer[frame_number % WINDOW_SIZE];
-        msg->setTrailer(binaryToMessage(computeCRC(messageToBinary(frame)))[0]);
+        auto crc = computeCRC(messageToBinary(frame));
+        msg->setTrailer(binaryToMessage(crc)[0]);
         msg->setPayload(frame.c_str());
+        write_before_transmission(simTime().str(), id,
+                std::to_string(frame_number), frame, crc);
     }
     msg->setHeader(frame_number);
-    msg->setAck_number(frame_expected );
+    msg->setAck_number(frame_expected);
     EV << msg->getType() << ' ' << msg->getAck_number() << ' '
               << msg->getHeader() << ' ' << msg->getPayload() << ' '
               << msg->getTrailer() << ' ' << endl;
     if (type == NACK) // NACK
             {
         no_nak = false;
+        write_control_frame(simTime().str(), id, NACK,
+                std::to_string(frame_number));
+    }
+    if (type == ACK) {
+        write_control_frame(simTime().str(), id, ACK,
+                std::to_string(frame_number));
     }
     node->send(msg, "out");
     if (type == DATA) {
@@ -103,9 +113,10 @@ void handle_message_timeout(cMessage *msg, Node *node) {
     }
 }
 void handle_ack_timeout(Node *node) {
-    if(ack_timer){
+    if (ack_timer) {
         send_frame(ACK, 0, frame_expected, out_buf, node);
     }
+
 }
 
 Define_Module(Node);
@@ -117,11 +128,11 @@ void Node::initialize() {
     out_buf = std::vector<std::string>(WINDOW_SIZE);
     in_buf = std::vector<std::string>(WINDOW_SIZE);
     auto number = this->getName()[5] == '0' ? false : true;
-
+    id = number ? "0" : "1";
     if (!number) {                        // TODO handle who is the receiver
         auto delay_time = 1; // must be given from the coordinator
         data = read_file(number);
-        EV<<data[4].second<<endl;
+        EV << data[4].second << endl;
         sender = true;
         scheduleAt(simTime() + delay_time, new cMessage("", 2));
         i = 0;
@@ -149,7 +160,7 @@ void Node::handleMessage(cMessage *msg) {
                     send_frame(DATA, next_frame_to_send, frame_expected,
                             out_buf, this);
                     inc(next_frame_to_send);
-                    EV<<"Next Frame to send"<<next_frame_to_send<<endl;
+                    EV << "Next Frame to send" << next_frame_to_send << endl;
                     i++;
                 }
             }
@@ -221,7 +232,7 @@ void Node::handleMessage(cMessage *msg) {
                 std::string receivedMessage = deframing(
                         in_buf[frame_expected % WINDOW_SIZE]);
                 // TODO: Do what you want with this message
-                write_frame_received(receivedMessage,std::to_string( seqNum));
+                write_frame_received(receivedMessage, std::to_string(seqNum));
 
                 no_nak = true;
                 isArrived[frame_expected % WINDOW_SIZE] = false;
@@ -248,8 +259,8 @@ void Node::handleMessage(cMessage *msg) {
     if (kind == NACK
             && between(ack_expected, (ack_number + 1) % (MAX_SEQ + 1),
                     next_frame_to_send)) {
-        send_frame(DATA, (ack_number - WINDOW_SIZE) % (WINDOW_SIZE), frame_expected,
-                out_buf, this);
+        send_frame(DATA, (ack_number - WINDOW_SIZE) % (WINDOW_SIZE),
+                frame_expected, out_buf, this);
     }
 
     while (between(ack_expected, ack_number, next_frame_to_send)) {
@@ -259,13 +270,14 @@ void Node::handleMessage(cMessage *msg) {
     }
     // Send message if any
     if (sender) {
-        if (nBuffered < WINDOW_SIZE && i <data_length) {
+        if (nBuffered < WINDOW_SIZE && i < data_length) {
             nBuffered++;
             // TODO: Handle delays here
             out_buf[next_frame_to_send % WINDOW_SIZE] = framing(data[i].second);
             send_frame(DATA, next_frame_to_send, frame_expected, out_buf, this);
+
             inc(next_frame_to_send);
-            EV<<"Next Frame to send"<<next_frame_to_send<<endl;
+            EV << "Next Frame to send" << next_frame_to_send << endl;
             i++;
         }
     }
