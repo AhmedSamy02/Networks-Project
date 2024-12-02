@@ -1,6 +1,6 @@
 package networksproject;
 
-import ned.IdealChannel;
+import ned.DelayChannel;
 
 
 @license(LGPL);
@@ -9,7 +9,24 @@ import ned.IdealChannel;
 //
 network Network
 {
-    @display("bgb=831,386");
+    parameters:
+        // Window Size
+        int WS = default(4);
+        // Sequence Number
+        int SN = default(7);
+        // Timeout interval
+        int TO = default(10);
+        // Processing Time
+        double PT = default(0.5);
+        // Transmission Delay
+        double TD @unit(s) @unit(s) = default(1.0s);
+        // Error Delay
+        double ED = default(4.0);
+        // Duplication Delay
+        double DD = default(0.1);
+        // Loss Probability
+        double LP = default(0);
+        @display("bgb=831,386");
     submodules:
         Node_0: Node {
             @display("p=210,116");
@@ -18,7 +35,7 @@ network Network
             @display("p=422,116");
         }
     connections:
-        Node_0.out --> IdealChannel --> Node_1.in;
-        Node_1.out --> IdealChannel --> Node_0.in;
+        Node_0.out --> DelayChannel {  delay = parent.TD; } --> Node_1.in;
+        Node_1.out --> DelayChannel {  delay = parent.TD; } --> Node_0.in;
 }
 

@@ -21,12 +21,13 @@
 #include "file_writer.h"
 #include <iostream>
 
-#define TIMEOUT_THRESHOLD 15      // seconds
-#define ACK_TIMEOUT_THRESHOLD 20 // seconds
-
 enum DATA_KIND {
     NACK, ACK, DATA
 };
+int TIMEOUT_THRESHOLD = 0;
+int MAX_SEQ = 0;
+int WINDOW_SIZE = 0;
+double PROCESSING_TIME = 0;
 int ack_expected = 0;
 int next_frame_to_send = 0;
 int frame_expected = 0;
@@ -39,8 +40,6 @@ bool ack_timer = false;
 bool no_nak = true;
 int data_length = 0;
 
-int MAX_SEQ = 0;
-int WINDOW_SIZE = 0;
 std::vector<bool> timer_buffer;
 std::vector<bool> isArrived;
 std::vector<std::string> out_buf;
@@ -64,7 +63,7 @@ void stop_timer(int num) {
 void start_ack_timer(Node *node) {
     ack_timer = true;
     cMessage *selfMessage = new cMessage("", 1);
-    node->scheduleAt(simTime() + ACK_TIMEOUT_THRESHOLD, selfMessage);
+    node->scheduleAt(simTime() + TIMEOUT_THRESHOLD, selfMessage);
 }
 void stop_ack_timer() {
     ack_timer = false;
@@ -83,7 +82,7 @@ void send_frame(DATA_KIND type, int frame_number, int frame_expected,
         auto crc = computeCRC(messageToBinary(frame));
         msg->setTrailer(binaryToMessage(crc)[0]);
         msg->setPayload(frame.c_str());
-        write_before_transmission(simTime().str(), id,
+        write_before_transmission((simTime()+ PROCESSING_TIME).str(), id,
                 std::to_string(frame_number), frame, crc);
     }
     msg->setHeader(frame_number);
@@ -94,14 +93,14 @@ void send_frame(DATA_KIND type, int frame_number, int frame_expected,
     if (type == NACK) // NACK
             {
         no_nak = false;
-        write_control_frame(simTime().str(), id, NACK,
+        write_control_frame((simTime()+ PROCESSING_TIME).str(), id, NACK,
                 std::to_string(frame_number));
     }
     if (type == ACK) {
-        write_control_frame(simTime().str(), id, ACK,
+        write_control_frame((simTime()+ PROCESSING_TIME).str(), id, ACK,
                 std::to_string(frame_number));
     }
-    node->send(msg, "out");
+    node->sendDelayed(msg, PROCESSING_TIME, "out");
     if (type == DATA) {
         start_timer(frame_number % WINDOW_SIZE, node);
     }
@@ -124,8 +123,10 @@ Define_Module(Node);
 
 void Node::initialize() {
     // Read parameters
-    WINDOW_SIZE = par("WS").intValue();
-    MAX_SEQ = par("SN").intValue();
+    WINDOW_SIZE = getParentModule()->par("WS").intValue();
+    MAX_SEQ = getParentModule()->par("SN").intValue();
+    TIMEOUT_THRESHOLD = getParentModule()->par("TO").intValue();
+    PROCESSING_TIME = getParentModule()->par("PT").doubleValue();
     // Variables initialization
     too_far = WINDOW_SIZE;
     // Timer initialization
@@ -136,9 +137,8 @@ void Node::initialize() {
     auto number = this->getName()[5] == '0' ? false : true;
     id = number ? "0" : "1";
     if (!number) {                        // TODO handle who is the receiver
-        auto delay_time = 1; // must be given from the coordinator
+        auto delay_time = 0; // must be given from the coordinator
         data = read_file(number);
-        EV << data[4].second << endl;
         sender = true;
         scheduleAt(simTime() + delay_time, new cMessage("", 2));
         i = 0;
@@ -157,18 +157,16 @@ void Node::handleMessage(cMessage *msg) {
             handle_ack_timeout(this);
         } else {
             if (sender) {
-                while (nBuffered < WINDOW_SIZE) {
-                    nBuffered++;
-                    // TODO: Handle delays here
-                    out_buf[next_frame_to_send % WINDOW_SIZE] = framing(
-                            data[i].second);
+                nBuffered++;
+                // TODO: Handle delays here
+                out_buf[next_frame_to_send % WINDOW_SIZE] = framing(
+                        data[i].second);
 
-                    send_frame(DATA, next_frame_to_send, frame_expected,
-                            out_buf, this);
-                    inc(next_frame_to_send);
-                    EV << "Next Frame to send" << next_frame_to_send << endl;
-                    i++;
-                }
+                send_frame(DATA, next_frame_to_send, frame_expected, out_buf,
+                        this);
+                inc(next_frame_to_send);
+                EV << "Next Frame to send" << next_frame_to_send << endl;
+                i++;
             }
         }
         cancelAndDelete(msg);

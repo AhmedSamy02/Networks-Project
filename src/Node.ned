@@ -20,23 +20,7 @@ package networksproject;
 //
 simple Node
 {
-    parameters:
-        // Window Size
-        int WS = default(4);
-        // Sequence Number
-        int SN = default(7);
-        // Timeout interval
-        int TO = default(10);
-        // Processing Time
-        double PT = default(0.5);
-        // Transmission Delay
-        double TD = default(1.0);
-        // Error Delay
-        double ED = default(4.0);
-        // Duplication Delay
-        double DD = default(0.1);
-        // Loss Probability
-        double LP = default(0);
+    
     gates:
         input in;
         output out;
