@@ -20,8 +20,7 @@
 #include "file_reader.h"
 #include "file_writer.h"
 #include <iostream>
-#define MAX_SEQ 7
-#define WINDOW_SIZE ((MAX_SEQ + 1) / 2)
+
 #define TIMEOUT_THRESHOLD 15      // seconds
 #define ACK_TIMEOUT_THRESHOLD 20 // seconds
 
@@ -31,7 +30,7 @@ enum DATA_KIND {
 int ack_expected = 0;
 int next_frame_to_send = 0;
 int frame_expected = 0;
-int too_far = WINDOW_SIZE;
+int too_far = 0;
 int i;
 std::string id;
 bool sender = 0;
@@ -40,6 +39,8 @@ bool ack_timer = false;
 bool no_nak = true;
 int data_length = 0;
 
+int MAX_SEQ = 0;
+int WINDOW_SIZE = 0;
 std::vector<bool> timer_buffer;
 std::vector<bool> isArrived;
 std::vector<std::string> out_buf;
@@ -122,6 +123,11 @@ void handle_ack_timeout(Node *node) {
 Define_Module(Node);
 
 void Node::initialize() {
+    // Read parameters
+    WINDOW_SIZE = par("WS").intValue();
+    MAX_SEQ = par("SN").intValue();
+    // Variables initialization
+    too_far = WINDOW_SIZE;
     // Timer initialization
     timer_buffer = std::vector<bool>(WINDOW_SIZE, false);
     isArrived = std::vector<bool>(WINDOW_SIZE, false);
