@@ -27,13 +27,14 @@ enum DATA_KIND {
 int TIMEOUT_THRESHOLD = 0;
 int MAX_SEQ = 0;
 int WINDOW_SIZE = 0;
+double ERROR_DELAY = 0;
 double PROCESSING_TIME = 0;
+double DUPLICATION_DELAY = 0;
 int ack_expected = 0;
 int next_frame_to_send = 0;
 int frame_expected = 0;
 int too_far = 0;
 int i;
-std::string id;
 bool sender = 0;
 int nBuffered = 0;
 bool ack_timer = false;
@@ -42,6 +43,7 @@ int data_length = 0;
 
 std::vector<bool> timer_buffer;
 std::vector<bool> isArrived;
+std::vector<bool> delayed;
 std::vector<std::string> out_buf;
 std::vector<std::string> in_buf;
 std::vector<std::pair<std::string, std::string>> data;
@@ -73,8 +75,9 @@ bool between(int a, int b, int c) {
             || ((b < c) && (c < a));
 }
 void send_frame(DATA_KIND type, int frame_number, int frame_expected,
-        std::vector<std::string> buffer, Node *node) {
+        std::vector<std::string> buffer, Node *node, char delay = '0') {
     MyMessage_Base *msg = new MyMessage_Base();
+    auto id = node->getName()[5];
     msg->setType(type);
     if (type == DATA) // Data
             {
@@ -82,8 +85,9 @@ void send_frame(DATA_KIND type, int frame_number, int frame_expected,
         auto crc = computeCRC(messageToBinary(frame));
         msg->setTrailer(binaryToMessage(crc)[0]);
         msg->setPayload(frame.c_str());
-        write_before_transmission((simTime()+ PROCESSING_TIME).str(), id,
-                std::to_string(frame_number), frame, crc);
+        EV<<id<<endl;
+        write_before_transmission((simTime() + PROCESSING_TIME).str(), id,
+                std::to_string(frame_number), frame, crc, delay);
     }
     msg->setHeader(frame_number);
     msg->setAck_number(frame_expected);
@@ -93,14 +97,22 @@ void send_frame(DATA_KIND type, int frame_number, int frame_expected,
     if (type == NACK) // NACK
             {
         no_nak = false;
-        write_control_frame((simTime()+ PROCESSING_TIME).str(), id, NACK,
+        write_control_frame((simTime() + PROCESSING_TIME).str(), id, NACK,
                 std::to_string(frame_number));
     }
     if (type == ACK) {
-        write_control_frame((simTime()+ PROCESSING_TIME).str(), id, ACK,
+        EV<<"ACKKKKKKK   "<<id<<endl;
+        write_control_frame((simTime() + PROCESSING_TIME).str(), id, ACK,
                 std::to_string(frame_number));
     }
-    node->sendDelayed(msg, PROCESSING_TIME, "out");
+    if (type == DATA) {
+        if (delay == '1') {
+            delayed[frame_number % WINDOW_SIZE] = true;
+        }
+        node->scheduleAfter(PROCESSING_TIME, msg);
+    } else {
+        node->sendDelayed(msg, PROCESSING_TIME, "out");
+    }
     if (type == DATA) {
         start_timer(frame_number % WINDOW_SIZE, node);
     }
@@ -127,17 +139,20 @@ void Node::initialize() {
     MAX_SEQ = getParentModule()->par("SN").intValue();
     TIMEOUT_THRESHOLD = getParentModule()->par("TO").intValue();
     PROCESSING_TIME = getParentModule()->par("PT").doubleValue();
+    ERROR_DELAY = getParentModule()->par("ED").doubleValue();
+    DUPLICATION_DELAY = getParentModule()->par("DD").doubleValue();
     // Variables initialization
     too_far = WINDOW_SIZE;
     // Timer initialization
     timer_buffer = std::vector<bool>(WINDOW_SIZE, false);
     isArrived = std::vector<bool>(WINDOW_SIZE, false);
+    delayed = std::vector<bool>(WINDOW_SIZE, false);
     out_buf = std::vector<std::string>(WINDOW_SIZE);
     in_buf = std::vector<std::string>(WINDOW_SIZE);
-    auto number = this->getName()[5] == '0' ? false : true;
-    id = number ? "0" : "1";
-    if (!number) {                        // TODO handle who is the receiver
-        auto delay_time = 0; // must be given from the coordinator
+    auto number = this->getName()[5] == '0' ? true : false;
+    if (number)
+    {                        // TODO handle who is the receiver
+        auto delay_time = 0; // must be given from the coordinator for sender to start sending ya yara
         data = read_file(number);
         sender = true;
         scheduleAt(simTime() + delay_time, new cMessage("", 2));
@@ -148,29 +163,55 @@ void Node::initialize() {
 
 void Node::handleMessage(cMessage *msg) {
     if (msg->isSelfMessage()) {
-
-        auto kind = msg->getKind();
-        // Either ack or message timeout
-        if (kind == 0) {
-            handle_message_timeout(msg, this);
-        } else if (kind == 1) {
-            handle_ack_timeout(this);
-        } else {
-            if (sender) {
-                nBuffered++;
-                // TODO: Handle delays here
-                out_buf[next_frame_to_send % WINDOW_SIZE] = framing(
-                        data[i].second);
-
-                send_frame(DATA, next_frame_to_send, frame_expected, out_buf,
-                        this);
-                inc(next_frame_to_send);
-                EV << "Next Frame to send" << next_frame_to_send << endl;
-                i++;
+        try {
+            MyMessage_Base *mmsg = check_and_cast<MyMessage_Base*>(msg);
+            if (delayed[mmsg->getHeader() % WINDOW_SIZE]) {
+                delayed[mmsg->getHeader() % WINDOW_SIZE] = false;
+                sendDelayed(mmsg, ERROR_DELAY, "out");
+            } else {
+                send(mmsg, "out");
             }
+            // Send message if any
+            if (sender) {
+                if (nBuffered < WINDOW_SIZE && i < data_length) {
+                    nBuffered++;
+                    // TODO: Handle delays here
+                    out_buf[next_frame_to_send % WINDOW_SIZE] = framing(
+                            data[i].second);
+                    send_frame(DATA, next_frame_to_send, frame_expected,
+                            out_buf, this, data[i].first[3]);
+
+                    inc(next_frame_to_send);
+                    EV << "Next Frame to send" << next_frame_to_send << endl;
+                    i++;
+                }
+            }
+            return;
+        } catch (exception e) {
+            auto kind = msg->getKind();
+            // Either ack or message timeout
+            if (kind == 0) {
+                handle_message_timeout(msg, this);
+            } else if (kind == 1) {
+                handle_ack_timeout(this);
+            } else {
+                if (sender) {
+                    nBuffered++;
+                    // TODO: Handle delays here
+                    out_buf[next_frame_to_send % WINDOW_SIZE] = framing(
+                            data[i].second);
+
+                    send_frame(DATA, next_frame_to_send, frame_expected,
+                            out_buf, this, data[i].first[3]);
+                    inc(next_frame_to_send);
+                    EV << "Next Frame to send" << next_frame_to_send << endl;
+                    i++;
+                }
+            }
+            cancelAndDelete(msg);
+            return;
         }
-        cancelAndDelete(msg);
-        return;
+
     }
     MyMessage_Base *mmsg = check_and_cast<MyMessage_Base*>(msg);
     int kind = mmsg->getType();
@@ -272,17 +313,5 @@ void Node::handleMessage(cMessage *msg) {
         stop_timer(ack_expected % WINDOW_SIZE);
         inc(ack_expected);
     }
-    // Send message if any
-    if (sender) {
-        if (nBuffered < WINDOW_SIZE && i < data_length) {
-            nBuffered++;
-            // TODO: Handle delays here
-            out_buf[next_frame_to_send % WINDOW_SIZE] = framing(data[i].second);
-            send_frame(DATA, next_frame_to_send, frame_expected, out_buf, this);
 
-            inc(next_frame_to_send);
-            EV << "Next Frame to send" << next_frame_to_send << endl;
-            i++;
-        }
-    }
 }
