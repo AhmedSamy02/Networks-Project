@@ -1,6 +1,7 @@
 package networksproject;
 
 import ned.DelayChannel;
+import ned.IdealChannel;
 
 
 @license(LGPL);
@@ -21,7 +22,7 @@ network Network
         // Transmission Delay
         double TD @unit(s) @unit(s) = default(1.0s);
         // Error Delay
-        double ED = default(4.0);
+        double ED = default(6.0);
         // Duplication Delay
         double DD = default(0.1);
         // Loss Probability
@@ -29,10 +30,10 @@ network Network
         @display("bgb=831,386");
     submodules:
         Node_0: Node {
-            @display("p=210,116");
+            @display("p=152.3875,146.125");
         }
         Node_1: Node {
-            @display("p=422,116");
+            @display("p=581.3688,150.3");
         }
     connections:
         Node_0.out --> DelayChannel {  delay = parent.TD; } --> Node_1.in;

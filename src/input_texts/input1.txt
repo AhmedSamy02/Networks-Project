@@ -10,7 +10,7 @@
 0100 and is most commonly played by drawing
 0000 a bow across its strings.
 0000 It can also be played by plucking
-1001 the strings$ with the fingers (pizzicato)
+1000 the strings$ with the fingers (pizzicato)
 0000 and, in specialized cases, by striking
 0010 the strings with the wooden side$ of the bow
 0000 (col legno).

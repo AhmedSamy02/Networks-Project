@@ -11,7 +11,7 @@ void write_reading_file_line(string processing_time, char node_id,
 }
 
 void write_before_transmission(string sending_time, char node_id,
-        string seqNum, string payload, string trailer_in_bits, char delay = '0',
+        string seqNum, string payload, char trailer_in_bits, char delay = '0',
         string modified = "-1", string lost = "No", string duplicate = "0",
         string sent = "sent") {
     out << "At time [" << sending_time << "], Node[" << node_id << "] [" << sent
