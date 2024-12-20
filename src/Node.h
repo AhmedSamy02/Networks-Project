@@ -28,6 +28,25 @@ class Node : public cSimpleModule
   protected:
     virtual void initialize() override;
     virtual void handleMessage(cMessage *msg) override;
+  public:
+    int ack_expected = 0;
+    int next_frame_to_send = 0;
+    int frame_expected = 0;
+    int too_far = 0;
+    int i;
+    int last_time = 0;
+    int nBuffered = 0;
+    cMessage* ack_timer = nullptr;
+    bool no_nak = true;
+    int data_length = 0;
+    std::vector<cMessage*> timer_buffer;
+    std::vector<bool> isArrived;
+    std::vector<bool> delayed;
+    std::vector<bool> duplicated;
+    std::vector<std::string> out_buf;
+    std::vector<std::string> in_buf;
+    std::vector<std::pair<std::string, std::string>> data;
+    bool sender = false;
 };
 
 #endif
