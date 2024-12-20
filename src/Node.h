@@ -43,6 +43,7 @@ class Node : public cSimpleModule
     std::vector<bool> isArrived;
     std::vector<bool> delayed;
     std::vector<bool> duplicated;
+    std::vector<bool> lossed;
     std::vector<std::string> out_buf;
     std::vector<std::string> in_buf;
     std::vector<std::pair<std::string, std::string>> data;

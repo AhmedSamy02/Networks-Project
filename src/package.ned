@@ -22,7 +22,7 @@ network Network
         // Transmission Delay
         double TD @unit(s) @unit(s) = default(1.0s);
         // Error Delay
-        double ED = default(6.0);
+        double ED = default(4.0);
         // Duplication Delay
         double DD = default(0.1);
         // Loss Probability
