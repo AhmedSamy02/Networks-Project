@@ -23,7 +23,7 @@ void write_before_transmission(string sending_time, char node_id,
             << "], Duplicate [" << duplicate << "], Delay [" << delay << "]."
             << endl;
 }
-void write_timeout_event(string timeout_time, string node_id, string seqNum)
+void write_timeout_event(string timeout_time, char node_id, string seqNum)
 {
         out << "Time out event at time [" << timeout_time << "], at Node["
             << node_id << "] for frame with seq_num=[" << seqNum << "]" << endl;

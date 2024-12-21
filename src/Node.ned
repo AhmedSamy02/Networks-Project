@@ -24,4 +24,5 @@ simple Node
     gates:
         input in;
         output out;
+        input in0;
 }

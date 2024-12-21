@@ -35,8 +35,13 @@ network Network
         Node_1: Node {
             @display("p=581.3688,150.3");
         }
+        coordinator: Coordinator {
+            @display("p=371.575,273.4625");
+        }
     connections:
         Node_0.out --> DelayChannel {  delay = parent.TD; } --> Node_1.in;
         Node_1.out --> DelayChannel {  delay = parent.TD; } --> Node_0.in;
+        coordinator.out0 --> IdealChannel --> Node_0.in0;
+        coordinator.out1 --> IdealChannel --> Node_1.in0;
 }
 

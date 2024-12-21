@@ -20,4 +20,8 @@ package networksproject;
 //
 simple Coordinator
 {
+    gates:
+        output out0;
+        output out1;
+        
 }

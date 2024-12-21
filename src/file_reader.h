@@ -2,13 +2,13 @@
 #include <vector>
 #include <string>
 #include <fstream>
-std::pair<std::string, std::string> coordinator_file_read()
+std::pair<int, int> coordinator_file_read()
 {
     std::ifstream in("input_texts/coordinator.txt");
     std::string start_node = "", start_time = "";
     in >> start_node;
     in >> start_time;
-    return std::pair<std::string, std::string>(start_node, start_time);
+    return std::pair<int, int>(start_node == "0" ? 0 : 1, std::atoi(start_time.c_str()));
 }
 std::vector<std::pair<std::string, std::string>> read_file(bool node_number)
 {

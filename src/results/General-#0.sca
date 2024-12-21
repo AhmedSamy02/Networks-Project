@@ -1,8 +1,8 @@
 version 3
-run General-0-20241219-12:55:29-18264
+run General-0-20241221-17:23:04-31136
 attr configname General
-attr datetime 20241219-12:55:29
-attr datetimef 20241219-125529
+attr datetime 20241221-17:23:04
+attr datetimef 20241221-172304
 attr experiment General
 attr inifile omnetpp.ini
 attr iterationvars ""
@@ -10,7 +10,7 @@ attr iterationvarsd ""
 attr iterationvarsf ""
 attr measurement ""
 attr network Network
-attr processid 18264
+attr processid 31136
 attr repetition 0
 attr replication #0
 attr resultdir results
@@ -31,8 +31,11 @@ attr mutable ""
 par Network.Node_1.out.channel delay 1s
 attr mutable ""
 attr unit s
+par Network.coordinator.out0.channel typename "\"ned.IdealChannel\""
+par Network.coordinator.out1.channel typename "\"ned.IdealChannel\""
 par Network.Node_0 typename "\"networksproject.Node\""
 par Network.Node_1 typename "\"networksproject.Node\""
+par Network.coordinator typename "\"networksproject.Coordinator\""
 par Network typename "\"networksproject.Network\""
 par Network WS 4
 par Network SN 7
@@ -40,52 +43,7 @@ par Network TO 10
 par Network PT 0.5
 par Network TD 1s
 attr unit s
-par Network ED 6
-par Network DD 0.1
-par Network LP 0
-
-run General-0-20241219-12:53:26-5680
-attr configname General
-attr datetime 20241219-12:53:26
-attr datetimef 20241219-125326
-attr experiment General
-attr inifile omnetpp.ini
-attr iterationvars ""
-attr iterationvarsd ""
-attr iterationvarsf ""
-attr measurement ""
-attr network Network
-attr processid 5680
-attr repetition 0
-attr replication #0
-attr resultdir results
-attr runnumber 0
-attr seedset 0
-config network Network
-config simtime-resolution ms
-
-par Network.Node_0.out.channel typename "\"ned.DelayChannel\""
-par Network.Node_0.out.channel disabled false
-attr mutable ""
-par Network.Node_0.out.channel delay 1s
-attr mutable ""
-attr unit s
-par Network.Node_1.out.channel typename "\"ned.DelayChannel\""
-par Network.Node_1.out.channel disabled false
-attr mutable ""
-par Network.Node_1.out.channel delay 1s
-attr mutable ""
-attr unit s
-par Network.Node_0 typename "\"networksproject.Node\""
-par Network.Node_1 typename "\"networksproject.Node\""
-par Network typename "\"networksproject.Network\""
-par Network WS 4
-par Network SN 7
-par Network TO 10
-par Network PT 0.5
-par Network TD 1s
-attr unit s
-par Network ED 6
+par Network ED 4
 par Network DD 0.1
 par Network LP 0
 

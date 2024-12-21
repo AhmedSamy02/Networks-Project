@@ -35,6 +35,7 @@ class Node : public cSimpleModule
     int too_far = 0;
     int i;
     int last_time = 0;
+    bool nacked = false;
     int nBuffered = 0;
     cMessage* ack_timer = nullptr;
     bool no_nak = true;
@@ -43,6 +44,7 @@ class Node : public cSimpleModule
     std::vector<bool> isArrived;
     std::vector<bool> delayed;
     std::vector<bool> duplicated;
+    std::vector<bool> manipulation;
     std::vector<bool> lossed;
     std::vector<std::string> out_buf;
     std::vector<std::string> in_buf;
