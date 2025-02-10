@@ -1,0 +1,54 @@
+At time[1], Node[0] , Introducing channel error with code= [1000].
+At time [1.5], Node[0] [sent] frame with seq_num=[0] and payload=[$An el0ctric car is an automobile that is$] and trailer=[00010000] , Modified [6] , Lost[No], Duplicate [0], Delay [0].
+At time[1.5], Node[0] , Introducing channel error with code= [0000].
+At time [2], Node[0] [sent] frame with seq_num=[1] and payload=[$propelled by one or more electric motors,$] and trailer=[00110110] , Modified [-1] , Lost[No], Duplicate [0], Delay [0].
+At time[2], Node[0] , Introducing channel error with code= [0000].
+At time [2.5], Node[0] [sent] frame with seq_num=[2] and payload=[$using energy stored in batteries.$] and trailer=[00110100] , Modified [-1] , Lost[No], Duplicate [0], Delay [0].
+At time[2.5], Node[0] , Introducing channel error with code= [0010].
+At time [3], Node[0] [sent] frame with seq_num=[3] and payload=[$Compared to internal combustion engine (ICE) vehicles,$] and trailer=[00001010] , Modified [-1] , Lost[No], Duplicate [1], Delay [0].
+At time [3.1], Node[0] [sent] frame with seq_num=[3] and payload=[$Compared to internal combustion engine (ICE) vehicles,$] and trailer=[00001010] , Modified [-1] , Lost[No], Duplicate [1], Delay [0].
+Uploading payload=[An el0ctric car is an automobile that is] and seq_num =[0] to the network layer
+At time[3], Node[1] Sending [ACK] with number [1] , loss [No]
+Uploading payload=[propelled by one or more electric motors,] and seq_num =[1] to the network layer
+At time[3.5], Node[1] Sending [ACK] with number [2] , loss [No]
+Uploading payload=[using energy stored in batteries.] and seq_num =[2] to the network layer
+At time[4], Node[1] Sending [ACK] with number [3] , loss [No]
+Uploading payload=[Compared to internal combustion engine (ICE) vehicles,] and seq_num =[3] to the network layer
+At time[4.5], Node[1] Sending [ACK] with number [4] , loss [No]
+At time[4], Node[0] , Introducing channel error with code= [0011].
+At time [4.5], Node[0] [sent] frame with seq_num=[4] and payload=[$electric cars are quieter,$] and trailer=[00100010] , Modified [-1] , Lost[No], Duplicate [1], Delay [1].
+At time [4.6], Node[0] [sent] frame with seq_num=[4] and payload=[$electric cars are quieter,$] and trailer=[00100010] , Modified [-1] , Lost[Yes], Duplicate [1], Delay [1].
+At time[4.5], Node[0] , Introducing channel error with code= [0000].
+At time [5], Node[0] [sent] frame with seq_num=[5] and payload=[$have no exhaust emissions, and lower emissions overall.$] and trailer=[00011100] , Modified [-1] , Lost[No], Duplicate [0], Delay [0].
+At time[5], Node[0] , Introducing channel error with code= [0000].
+At time [5.5], Node[0] [sent] frame with seq_num=[6] and payload=[$In the United States and the European Union,$] and trailer=[01101100] , Modified [-1] , Lost[No], Duplicate [0], Delay [0].
+At time[5.5], Node[0] , Introducing channel error with code= [1000].
+At time [6], Node[0] [sent] frame with seq_num=[7] and payload=[$as of 20200 the total cost of ownership of recent electric vehicles$] and trailer=[01001100] , Modified [11] , Lost[No], Duplicate [0], Delay [0].
+At time[6.5], Node[1] Sending [NACK] with number [4] , loss [No]
+At time[7], Node[1] Sending [ACK] with number [4] , loss [No]
+At time [8], Node[0] [sent] frame with seq_num=[4] and payload=[$electric cars are quieter,$] and trailer=[00100010] , Modified [-1] , Lost[No], Duplicate [0], Delay [0].
+Uploading payload=[electric cars are quieter,] and seq_num =[4] to the network layer
+Uploading payload=[have no exhaust emissions, and lower emissions overall.] and seq_num =[5] to the network layer
+Uploading payload=[In the United States and the European Union,] and seq_num =[6] to the network layer
+At time[9.501], Node[1] Sending [ACK] with number [7] , loss [No]
+At time[10.501], Node[0] , Introducing channel error with code= [0000].
+At time [11.001], Node[0] [sent] frame with seq_num=[0] and payload=[$is cheaper/$ than that of equivalent ICE cars,$] and trailer=[01000110] , Modified [-1] , Lost[No], Duplicate [0], Delay [0].
+At time[11.001], Node[0] , Introducing channel error with code= [0000].
+At time [11.501], Node[0] [sent] frame with seq_num=[1] and payload=[$due to lower fueling and maintenance costs/$/$.$] and trailer=[01001110] , Modified [-1] , Lost[No], Duplicate [0], Delay [0].
+At time[11.501], Node[0] , Introducing channel error with code= [0000].
+At time [12.001], Node[0] [sent] frame with seq_num=[2] and payload=[$Charging an electric car can be done at a variety of charging stations;$] and trailer=[00001110] , Modified [-1] , Lost[No], Duplicate [0], Delay [0].
+At time[12.501], Node[1] Sending [NACK] with number [7] , loss [No]
+At time[13.001], Node[1] Sending [ACK] with number [7] , loss [No]
+At time[13.501], Node[1] Sending [ACK] with number [7] , loss [No]
+At time [14.001], Node[0] [sent] frame with seq_num=[7] and payload=[$as of 2020, the total cost of ownership of recent electric vehicles$] and trailer=[01001100] , Modified [-1] , Lost[No], Duplicate [0], Delay [0].
+Uploading payload=[as of 2020, the total cost of ownership of recent electric vehicles] and seq_num =[7] to the network layer
+Uploading payload=[is cheaper$ than that of equivalent ICE cars,] and seq_num =[0] to the network layer
+Uploading payload=[due to lower fueling and maintenance costs$$.] and seq_num =[1] to the network layer
+Uploading payload=[Charging an electric car can be done at a variety of charging stations;] and seq_num =[2] to the network layer
+At time[15.502], Node[1] Sending [ACK] with number [3] , loss [No]
+At time[16.502], Node[0] , Introducing channel error with code= [1100].
+At time [17.002], Node[0] [sent] frame with seq_num=[3] and payload=[$these charging stations can be installed in 0oth houses// and public areas.$] and trailer=[01000110] , Modified [45] , Lost[Yes], Duplicate [1], Delay [1].
+Time out event at time [26.502], at Node[0] for frame with seq_num=[3]
+At time [27.002], Node[0] [sent] frame with seq_num=[3] and payload=[$these charging stations can be installed in both houses// and public areas.$] and trailer=[01000110] , Modified [-1] , Lost[No], Duplicate [0], Delay [0].
+Uploading payload=[these charging stations can be installed in both houses/ and public areas.] and seq_num =[3] to the network layer
+At time[28.502], Node[1] Sending [ACK] with number [4] , loss [No]

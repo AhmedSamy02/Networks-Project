@@ -1,16 +1,27 @@
-0000 The violin, sometimes known as a fiddle
-0010 is a wooden chordophone (string instrument)
-0100 in the violin family.
-0110 Most violins have a hollow wooden body.
-0000 It is the smallest and thus highest-pitched instrument
-0000 (soprano) in the family in regular use.
-0000 [a] The violin typically has four strings,
-0000 (some can have five$), usually tuned in perfect
-0000 fifths with notes G3, D4, A4, E5,
-0100 and is most commonly played by drawing
-0000 a bow across its strings.
-0000 It can also be played by plucking
-1000 the strings$ with the fingers (pizzicato)
-0000 and, in specialized cases, by striking
-0010 the strings with the wooden side$ of the bow
-0000 (col legno).
+0000 $He//llo$
+0000 GoodMorning1
+0000 GoodMorning2
+0000 GoodMorning3
+0000 GoodMorning4
+0100 GoodMorning5
+0000 GoodMorning6
+0000 GoodMorning7
+0000 Hi0
+0000 Hi1
+1000 Hi2
+0000 Hi3
+0001 Hi4
+0000 Hi5
+0000 Hi6
+0010 Hi7
+0000 Good0
+0000 Good1
+0000 Good2
+0000 Good3
+1100 Good4
+0100 Good5
+0100 Good6
+0100 Good7
+1001 Bye0
+0000 Bye1
+0000 Bye2

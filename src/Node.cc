@@ -23,8 +23,15 @@
 #include <iterator>
 #include <string>
 #include <sstream>
+#include <omnetpp.h>
 
 // Helper function to print vector contents
+int addRandomError(string &message)
+{
+    int randomLocation = rand() % message.length();
+    message[randomLocation] = message[randomLocation] == '0' ? '1' : '0';
+    return randomLocation;
+}
 template <typename T>
 std::string vectorToString(const std::vector<T> &vec)
 {
@@ -81,7 +88,7 @@ void inc(int &k)
 {
     k = (k + 1) % (MAX_SEQ + 1);
 }
-void start_timer(int num, Node *node)
+void start_timer(int num, Node *node, int iterator)
 {
     cout << "Message hi 10" << endl;
 
@@ -105,7 +112,7 @@ void start_timer(int num, Node *node)
     cMessage *selfMessage = new cMessage(&c, 0);
     node->timer_buffer[num % WINDOW_SIZE] = selfMessage;
     EV << "timers " << cMessageVectorToString(node->timer_buffer) << endl;
-    node->scheduleAt(simTime() + TIMEOUT_THRESHOLD, selfMessage);
+    node->scheduleAt(simTime() + TIMEOUT_THRESHOLD + iterator * PROCESSING_TIME, selfMessage);
 }
 void stop_timer(int num, Node *node)
 {
@@ -146,18 +153,24 @@ void reset_buffers_for_seq(int num, Node *node)
 
 void send_frame(DATA_KIND type, int frame_number, int frame_expected,
                 std::vector<std::string> buffer, Node *node, char delay = '0',
-                char duplicate = '0', char loss = '0', char manipulation = '0')
+                char duplicate = '0', char loss = '0', char manipulation = '0', int iterator = 1)
 {
+    int modified = -1;
     reset_buffers_for_seq(frame_number, node);
     MyMessage_Base *msg = new MyMessage_Base();
     auto id = node->getName()[5];
     msg->setType(type);
     if (type == DATA) // Data
     {
-        EV << "get from out buff" << endl;
         std::string frame = buffer[frame_number % WINDOW_SIZE];
+        EV << "get from out buff" << endl;
         auto crc = computeCRC(messageToBinary(frame));
         msg->setTrailer(binaryToMessage(crc)[0]);
+        if (manipulation == '1')
+        {
+            EV << "Manipulation" << endl;
+            modified = addRandomError(frame);
+        }
         msg->setPayload(frame.c_str());
     }
     msg->setHeader(frame_number);
@@ -165,69 +178,134 @@ void send_frame(DATA_KIND type, int frame_number, int frame_expected,
     // EV << msg->getType() << ' ' << msg->getAck_number() << ' '
     //    << msg->getHeader() << ' ' << msg->getPayload() << ' '
     //    << msg->getTrailer() << ' ' << endl;
+
+    // double probability = ((double) rand() / (RAND_MAX));
+    double probability = 1;
+
     if (type == NACK) // NACK
     {
         node->no_nak = false;
-        write_control_frame((simTime()).str(), id, NACK,
+        // if (probability > 0.5) {
+
+        write_control_frame((simTime() + PROCESSING_TIME).str(), id, NACK,
                             std::to_string(frame_expected));
 
-        node->send(msg, "out");
-        EV << "nack" << frame_expected << ' ' << endl;
+        node->sendDelayed(msg, PROCESSING_TIME, "out");
+        // } else {
+        //     write_control_frame((simTime()).str(), id, NACK,
+        //             std::to_string(frame_expected), "Yes");
+        // }
+
+        //        EV << "nack" << frame_expected << ' ' << endl;
     }
     else if (type == ACK)
     {
-        write_control_frame(simTime().str(), id, ACK,
+
+        // if (probability > 0.5) {
+
+        write_control_frame((simTime() + PROCESSING_TIME).str(), id, ACK,
                             std::to_string(frame_expected));
-        node->send(msg, "out");
-        EV << "ack" << frame_expected << endl;
+
+        node->sendDelayed(msg, PROCESSING_TIME, "out");
+        // } else {
+        //     write_control_frame((simTime()).str(), id, ACK,
+        //             std::to_string(frame_expected), "Yes");
+        // }
+
+        //        EV << "ack" << frame_expected << endl;
+        node->ack_time = simTime().raw() / 1000.0;
     }
+    // if (type == NACK) // NACK
+    // {
+    //     node->no_nak = false;
+    //     write_control_frame((simTime() + PROCESSING_TIME).str(), id, NACK,
+    //                         std::to_string(frame_expected));
+    //     if (probability > 0.5)
+    //         node->sendDelayed(msg, PROCESSING_TIME, "out");
+
+    //     EV << "nack" << frame_expected << ' ' << endl;
+    // }
+    // else if (type == ACK)
+    // {
+    //     auto ayhaga = 0.0;
+    //     EV << "ack_time" << node->ack_time << endl;
+    //     EV << "SIM TIM: " << simTime().raw() / 1000.0 << endl;
+    //     EV << "before" << simTime() + PROCESSING_TIME + ayhaga << endl;
+
+    //     if ((simTime().raw() / 1000.0) > node->ack_time && (simTime().raw() / 1000.0) < node->ack_time + 0.5)
+    //     {
+    //         // EV << "before" << simTime() + PROCESSING_TIME + ayhaga << endl;
+    //         EV << "ayhaga" << endl;
+    //         ayhaga += 0.4;
+    //     }
+    //     EV << "after" << simTime() + PROCESSING_TIME + ayhaga << endl;
+
+    //     write_control_frame((simTime() + PROCESSING_TIME + ayhaga).str(), id, ACK,
+    //                         std::to_string(frame_expected));
+    //     if (probability > 0.5)
+    //         node->sendDelayed(msg, PROCESSING_TIME + ayhaga, "out");
+    //     EV << "ack" << frame_expected << endl;
+    //     node->ack_time = simTime().raw() / 1000.0;
+    // }
     else
     {
+        auto time = PROCESSING_TIME * iterator;
+        std::string res = "";
+        res += manipulation;
+        res += loss;
+        res += duplicate;
+        res += delay;
+
+        start_timer(frame_number, node, iterator - 1);
+
+        if (loss == '1')
+        {
+            EV << "loss" << endl;
+
+            write_before_transmission(
+                (simTime() + time).str(),
+                node->getName()[5], std::to_string(frame_number),
+                msg->getPayload(), messageToBinary(std::string(1, msg->getTrailer())),
+                delay ? '1' : '0', duplicate ? '1' : '0', std::to_string(modified), loss ? "Yes" : "No");
+
+            return;
+        }
+        EV << "time" << time << endl;
+        EV << "sim" << simTime() << endl;
         if (delay == '1')
         {
-            node->delayed[frame_number % WINDOW_SIZE] = true;
+            EV << "delay" << endl;
+            time += ERROR_DELAY;
         }
         if (duplicate == '1')
         {
-            node->duplicated[frame_number % WINDOW_SIZE] = true;
-            EV << "duplicate " << vectorToString(node->duplicated) << endl;
-            EV << "Is duplicated = "
-               << node->duplicated[frame_number % WINDOW_SIZE] << endl;
+            EV << "Dulpication" << endl;
+            node->sendDelayed(msg->dup(), time + DUPLICATION_DELAY, "out");
         }
-        EV << msg->getPayload() << endl;
-        EV << "loss " << loss << endl;
-        if (loss == '1')
-        {
-            node->lossed[frame_number % WINDOW_SIZE] = true;
-        }
-
-        if (manipulation == '1')
-        {
-            node->manipulation[frame_number % WINDOW_SIZE] = true;
-        }
-        EV << msg->getPayload() << endl;
-        EV << msg->getType() << endl;
-        EV << msg->getAck_number() << endl;
-        EV << msg->getHeader() << endl;
-        EV << "nBuffered = " << node->nBuffered << endl;
-        EV << "buffered out = " << vectorToString(node->out_buf) << endl;
-        EV << "buffered in = " << vectorToString(node->in_buf) << endl;
-        EV << "timer arr = " << cMessageVectorToString(node->timer_buffer) << endl;
-        EV << "delayed = " << vectorToString(node->delayed) << endl;
-        EV << "duplicated = " << vectorToString(node->duplicated) << endl;
-        EV << "isArrived = " << vectorToString(node->isArrived) << endl;
         if (node->nacked)
         {
-            node->scheduleAt(simTime() + PROCESSING_TIME + 0.001, msg);
             node->nacked = false;
-            simTime() = simTime() + 0.001;
+            time += 0.001;
         }
-        else
+        write_before_transmission(
+            (simTime() + PROCESSING_TIME * iterator).str(),
+            node->getName()[5], std::to_string(frame_number),
+            msg->getPayload(), messageToBinary(std::string(1, msg->getTrailer())),
+            delay, duplicate, std::to_string(modified), loss == '1' ? "Yes" : "No");
+
+        if (duplicate == '1')
         {
-            node->scheduleAt(simTime() + PROCESSING_TIME, msg);
+            write_before_transmission(
+                (simTime() + PROCESSING_TIME * iterator + DUPLICATION_DELAY).str(),
+                node->getName()[5], std::to_string(frame_number),
+                msg->getPayload(), messageToBinary(std::string(1, msg->getTrailer())),
+                delay ? '1' : '0', duplicate ? '1' : '0', std::to_string(modified), loss ? "Yes" : "No");
         }
+        node->sendDelayed(msg, time, "out");
+        EV << msg->getType() << ' ' << msg->getAck_number() << ' '
+           << msg->getHeader() << ' ' << msg->getPayload() << ' '
+           << msg->getTrailer() << ' ' << endl;
     }
-    //    stop_ack_timer(node);
 }
 void handle_message_timeout(int num, Node *node)
 {
@@ -242,11 +320,7 @@ void handle_ack_timeout(Node *node)
 {
     send_frame(ACK, 0, node->frame_expected, node->out_buf, node);
 }
-void addRandomError(string &message)
-{
-    int randomLocation = rand() % message.length();
-    message[randomLocation] = message[randomLocation] == '0' ? '1' : '0';
-}
+
 Define_Module(Node);
 
 void Node::initialize()
@@ -270,163 +344,26 @@ void Node::initialize()
     out_buf = std::vector<std::string>(WINDOW_SIZE);
     in_buf = std::vector<std::string>(WINDOW_SIZE);
     sender = false;
-
-    // if (this->getName()[5] == '0')
-    // { // TODO handle who is the receiver
-    //     // auto delay_time = 0; // must be given from the coordinator for sender to start sending ya yara
-    //     // scheduleAt(simTime() + delay_time, new cMessage("", 2));
-
-    // }
-    // else
-    // {
-    // }
+    ack_time = -1;
 }
 
 void Node::handleMessage(cMessage *msg)
 {
-    EV << "Node::handleMessage" << endl;
-    cout << "Message hi" << endl;
     if (msg->isSelfMessage())
     {
-        cout << "Message hi2" << endl;
-
-        EV << "Node::handleMessage2" << endl;
-        try
+        auto kind = msg->getKind();
+        if (kind == 0)
         {
-            MyMessage_Base *mmsg = check_and_cast<MyMessage_Base *>(msg);
-            auto seqNum = mmsg->getHeader();
-            auto kind = mmsg->getType();
-            cout << "Message hi3" << endl;
-
-            if (manipulation[seqNum % WINDOW_SIZE])
-            {
-                cout << "Message hi5" << endl;
-
-                EV << "Manipulation" << endl;
-                std::string payload = mmsg->getPayload();
-                addRandomError(payload);
-                mmsg->setPayload(payload.c_str());
-            }
-            start_timer(seqNum, this);
-            cout << "Message hi4" << endl;
-
-            if (!lossed[seqNum % WINDOW_SIZE])
-            { // loss packet after starting timer
-
-                if (delayed[seqNum % WINDOW_SIZE])
-                {
-                    EV << "Sending delay " << mmsg->getPayload() << endl;
-                    EV << "duliation " << vectorToString(duplicated) << endl;
-                    if (duplicated[seqNum % WINDOW_SIZE])
-                    {
-                        EV << "sending delay duplicate " << mmsg->getPayload() << endl;
-                        sendDelayed(mmsg->dup(),
-                                    ERROR_DELAY + PROCESSING_TIME + DUPLICATION_DELAY,
-                                    "out");
-                        write_before_transmission(
-                            (simTime() + DUPLICATION_DELAY).str(),
-                            this->getName()[5], std::to_string(seqNum),
-                            mmsg->getPayload(), mmsg->getTrailer(), '1', '1');
-                    }
-                    delayed[seqNum % WINDOW_SIZE] = false;
-                    sendDelayed(mmsg, ERROR_DELAY + PROCESSING_TIME, "out");
-                    write_before_transmission(simTime().str(), this->getName()[5],
-                                              std::to_string(seqNum), mmsg->getPayload(),
-                                              mmsg->getTrailer(), '1',
-                                              duplicated[seqNum % WINDOW_SIZE] ? '1' : '0');
-                }
-                else
-                {
-                    cout << "Message hi5" << endl;
-
-                    sendDelayed(mmsg, PROCESSING_TIME, "out");
-                    EV << "Sending no delay" << mmsg->getPayload() << endl;
-                    write_before_transmission(simTime().str(), this->getName()[5],
-                                              std::to_string(seqNum), mmsg->getPayload(),
-                                              mmsg->getTrailer(), '0',
-                                              duplicated[seqNum % WINDOW_SIZE] ? '1' : '0');
-                    if (duplicated[seqNum % WINDOW_SIZE])
-                    {
-                        sendDelayed(mmsg->dup(),
-                                    PROCESSING_TIME + DUPLICATION_DELAY, "out");
-                        EV << "Sending Duplicate Without Delay" << endl;
-                        write_before_transmission(
-                            (simTime() + DUPLICATION_DELAY).str(),
-                            this->getName()[5], std::to_string(seqNum),
-                            mmsg->getPayload(), mmsg->getTrailer(), '0', '1');
-                    }
-                }
-            }
-            // Send message if any
-            if (kind == DATA)
-            {
-                EV << nBuffered << endl;
-
-                if (nBuffered < WINDOW_SIZE && i < data_length && simTime().raw() > last_time)
-                {
-                    last_time = simTime().raw();
-                    EV << "1 Mategy nab3t " << data[i].second << endl;
-                    nBuffered++;
-                    EV << "nBuffered = " << nBuffered << endl;
-                    // TODO: Handle delays here
-                    out_buf[next_frame_to_send % WINDOW_SIZE] = framing(
-                        data[i].second);
-                    write_reading_file_line(simTime().str(), this->getName()[5],
-                                            data[i].first);
-                    send_frame(DATA, next_frame_to_send, frame_expected,
-                               out_buf, this, data[i].first[3], data[i].first[2], data[i].first[1], data[i].first[0]);
-                    EV << "data " << data[i].first << endl;
-                    EV << "data first " << data[i].first[1] << endl;
-
-                    inc(next_frame_to_send);
-                    i++;
-                    EV << "i= " << i << endl;
-                }
-            }
-            return;
+            handle_message_timeout(int(msg->getName()[0]), this);
+            // stop_timer(int(msg->getName()[0]), this);
         }
-        catch (exception e)
+        else if (kind == 1)
         {
-            auto kind = msg->getKind();
-            // Either ack or message timeout
-            if (kind == 0)
-            {
-                handle_message_timeout(int(msg->getName()[0]), this);
-                EV << "call timeout " << endl;
-                cout << "call timeout " << endl;
-                // EV << "call timeout " << endl;
-                stop_timer(int(msg->getName()[0]), this);
-                // cancelAndDelete(msg);
-            }
-            else if (kind == 1)
-            {
-                handle_ack_timeout(this);
-                cancelAndDelete(msg);
-            }
-            // else
-            // {
-            //     nBuffered++;
-            //     EV << "nBuffered = " << nBuffered << endl;
-            //     // TODO: Handle delays here
-            //     out_buf[next_frame_to_send % WINDOW_SIZE] = framing(
-            //         data[i].second);
-            //     write_reading_file_line(simTime().str(), this->getName()[5],
-            //                             data[i].first);
-            //     send_frame(DATA, next_frame_to_send, frame_expected, out_buf,
-            //                this, data[i].first[3], data[i].first[2], data[i].first[1], data[i].first[0]);
-            //     inc(next_frame_to_send);
-            //     i++;
-            //     EV << "i= " << i << endl;
-            //     EV << "cancel 1 "
-            //        << "sender " << sender << endl;
-            //     cancelAndDelete(msg);
-            // }
-            // EV << msg->getKind() << endl;
-            // EV << msg->getName() << endl;
-            //            cancelAndDelete(msg);
-
-            return;
+            handle_ack_timeout(this);
+            cancelAndDelete(msg);
         }
+        return;
+        // }/
     }
     MyMessage_Base *mmsg = check_and_cast<MyMessage_Base *>(msg);
     int kind = mmsg->getType();
@@ -444,28 +381,89 @@ void Node::handleMessage(cMessage *msg)
         i = 0;
         this->sender = true;
         data_length = data.size();
-        nBuffered++;
-        cout << "cancel 4" << endl;
+        EV << nBuffered << endl;
+        while (nBuffered < WINDOW_SIZE)
+        {
+            auto mss = framing(data[i].second);
+            out_buf[next_frame_to_send % WINDOW_SIZE] = mss;
+            inc(next_frame_to_send);
 
-        EV << "nBuffered = " << nBuffered << endl;
-        // TODO: Handle delays here
-        cout << "cancel 5" << endl;
+            MyMessage_Base *newmsg = new MyMessage_Base();
+            auto seqNum = i % (MAX_SEQ + 1);
+            cout << "Message hi3" << endl;
+            newmsg->setType(DATA);
+            out_buf[seqNum % WINDOW_SIZE] = mss;
+            auto crc = computeCRC(messageToBinary(mss));
+            newmsg->setTrailer(binaryToMessage(crc)[0]);
+            newmsg->setHeader(seqNum);
+            newmsg->setAck_number(frame_expected);
+            nBuffered++;
+            auto time = PROCESSING_TIME * (i + 1);
+            EV << "TIME: " << time << endl;
+            cMessage *selfMessage = new cMessage(std::to_string(seqNum).c_str(), 0);
+            timer_buffer[seqNum % WINDOW_SIZE] = selfMessage;
+            scheduleAt(simTime() + time + TIMEOUT_THRESHOLD, selfMessage);
 
-        out_buf[next_frame_to_send % WINDOW_SIZE] = framing(
-            data[i].second);
-        cout << "cancel 6" << endl;
+            int modified = -1;
+            bool lost = false;
+            bool delayed = false;
+            bool duplicated = false;
 
-        write_reading_file_line(simTime().str(), this->getName()[5],
-                                data[i].first);
-        cout << "cancel 5" << endl;
+            if (data[i].first[1] != '1')
+            {
+                EV << "not loss" << endl;
+                if (data[i].first[0] == '1')
+                {
+                    EV << "Manipulation" << endl;
 
-        send_frame(DATA, next_frame_to_send, frame_expected, out_buf,
-                   this, data[i].first[3], data[i].first[2], data[i].first[1], data[i].first[0]);
-        inc(next_frame_to_send);
-        i++;
-        EV << "i= " << i << endl;
-        EV << "cancel 1 "
-           << "sender " << sender << endl;
+                    modified = addRandomError(mss);
+                }
+                newmsg->setPayload(mss.c_str());
+
+                if (data[i].first[3] == '1')
+                {
+                    EV << "delay" << endl;
+                    time += ERROR_DELAY;
+                    delayed = true;
+                }
+                if (data[i].first[2] == '1')
+                {
+                    EV << "Dulpication" << endl;
+                    duplicated = true;
+                    sendDelayed(newmsg->dup(), time + DUPLICATION_DELAY, "out");
+                }
+
+                sendDelayed(newmsg, time, "out");
+                write_reading_file_line((simTime() + PROCESSING_TIME * i).str(), this->getName()[5], data[i].first);
+                write_before_transmission(
+                    (simTime() + PROCESSING_TIME * (i + 1)).str(),
+                    this->getName()[5], std::to_string(seqNum),
+                    newmsg->getPayload(), messageToBinary(std::string(1, newmsg->getTrailer())),
+                    delayed ? '1' : '0', duplicated ? '1' : '0', std::to_string(modified), lost ? "Yes" : "No");
+
+                EV << "sending" << endl;
+                EV << nBuffered << endl;
+                if (data[i].first[2] == '1')
+                {
+                    write_before_transmission(
+                        (simTime() + DUPLICATION_DELAY + PROCESSING_TIME * (i + 1)).str(),
+                        this->getName()[5], std::to_string(seqNum),
+                        newmsg->getPayload(), messageToBinary(std::string(1, newmsg->getTrailer())),
+                        delayed ? '1' : '0', '1', std::to_string(modified), lost ? "Yes" : "No");
+                }
+            }
+            else
+            {
+                write_reading_file_line((simTime() + PROCESSING_TIME * i).str(), this->getName()[5],
+                                        data[i].first);
+                write_before_transmission(
+                    (simTime() + time).str(),
+                    this->getName()[5], std::to_string(seqNum),
+                    newmsg->getPayload(), messageToBinary(std::string(1, newmsg->getTrailer())),
+                    delayed ? '1' : '0', duplicated ? '1' : '0', std::to_string(modified), lost ? "Yes" : "No");
+            }
+            i++;
+        }
         return;
     }
     // Receiver
@@ -485,11 +483,16 @@ void Node::handleMessage(cMessage *msg)
             //     return;
             // }
         }
-        if (between(frame_expected, seqNum, too_far) && isArrived[seqNum % WINDOW_SIZE])
-        {
-            EV << "received" << endl;
-            send_frame(ACK, 0, seqNum, out_buf, this);
-        }
+        // if (between(frame_expected, seqNum, too_far) && isArrived[seqNum % WINDOW_SIZE])
+        // {
+        //     EV << "received" << endl;
+        //     send_frame(ACK, 0, frame_expected, out_buf, this);
+        // }
+        EV << " the vheck " << checkMessage(messageToBinary(payload), trailer) << endl;
+        EV << "message " << payload << endl;
+        EV << ack_number << ' '
+           << seqNum << ' ' << payload << ' '
+           << trailer << ' ' << endl;
         if (between(frame_expected, seqNum, too_far) && !isArrived[seqNum % WINDOW_SIZE] && checkMessage(messageToBinary(payload), trailer))
         {
             EV << "in between " << endl;
@@ -502,7 +505,7 @@ void Node::handleMessage(cMessage *msg)
                 std::string receivedMessage = deframing(
                     in_buf[frame_expected % WINDOW_SIZE]);
                 // TODO: Do what you want with this message
-                write_frame_received(receivedMessage, std::to_string(seqNum));
+                write_frame_received(receivedMessage, std::to_string(frame_expected));
                 no_nak = true;
                 isArrived[frame_expected % WINDOW_SIZE] = false;
                 inc(frame_expected);
@@ -518,8 +521,15 @@ void Node::handleMessage(cMessage *msg)
             else
             {
                 EV << "send between " << frame_expected << " and " << endl;
-
-                send_frame(NACK, seqNum, frame_expected, out_buf, this);
+                if (no_nak)
+                {
+                    no_nak = false;
+                    send_frame(NACK, seqNum, frame_expected, out_buf, this);
+                }
+                else
+                {
+                    send_frame(ACK, seqNum, frame_expected, out_buf, this);
+                }
             }
         }
     }
@@ -532,7 +542,9 @@ void Node::handleMessage(cMessage *msg)
         send_frame(DATA, ack_number, frame_expected,
                    out_buf, this);
     }
-    EV << "timer arr = " << cMessageVectorToString(timer_buffer) << endl;
+
+    // EV << "timer arr = " << cMessageVectorToString(timer_buffer) << endl;
+    cout << "becore" << endl;
     while (between(ack_expected, (ack_number - 1) % (MAX_SEQ + 1), next_frame_to_send)) // sender
     {
         EV << "kind " << kind << endl;
@@ -542,30 +554,35 @@ void Node::handleMessage(cMessage *msg)
         inc(ack_expected);
         EV << "Inside nBuffered = " << nBuffered << endl;
     }
+
+    cout << "after" << endl;
     if (kind == ACK)
     {
         EV << "kind " << kind << endl;
         EV << "ACK recieved " << ack_number << endl;
-        if (nBuffered < WINDOW_SIZE && i < data_length && simTime().raw() >= last_time)
+        int temp = 1;
+        if (i == data_length && ack_number != next_frame_to_send)
+        {
+            send_frame(DATA, ack_number, frame_expected, out_buf, this);
+        }
+        while (nBuffered < WINDOW_SIZE && i < data_length && simTime().raw() >= last_time)
         {
             last_time = simTime().raw();
-            EV << "3 Mategy nab3t" << data[i].second << endl;
+            EV << "3 Mategy nab3t  " << data[i].second << endl;
             nBuffered++;
             EV << "nBuffered = " << nBuffered << endl;
             EV << "buffered out = " << vectorToString(out_buf) << endl;
             EV << "buffered in = " << vectorToString(in_buf) << endl;
             EV << "timer arr = " << cMessageVectorToString(timer_buffer) << endl;
-            EV << "delayed = " << vectorToString(delayed) << endl;
-            EV << "duplicated = " << vectorToString(duplicated) << endl;
             EV << "isArrived = " << vectorToString(isArrived) << endl;
             // TODO: Handle delays here
             out_buf[next_frame_to_send % WINDOW_SIZE] = framing(data[i].second);
-            write_reading_file_line(simTime().str(), this->getName()[5],
-                                    data[i].first);
+            write_reading_file_line((simTime() + PROCESSING_TIME * (temp - 1)).str(), this->getName()[5], data[i].first);
             send_frame(DATA, next_frame_to_send, frame_expected, out_buf, this,
-                       data[i].first[3], data[i].first[2], data[i].first[1], data[i].first[0]);
+                       data[i].first[3], data[i].first[2], data[i].first[1], data[i].first[0], temp);
             inc(next_frame_to_send);
             i++;
+            temp++;
             EV << "i= " << i << endl;
         }
     }

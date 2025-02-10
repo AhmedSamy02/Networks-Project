@@ -1,0 +1,35 @@
+At time[1], Node[0] , Introducing channel error with code= [0000].
+At time [1.5], Node[0] [sent] frame with seq_num=[0] and payload=[$Sherlock Holmes is a fictional detective$] and trailer=[00100110] , Modified [-1] , Lost[No], Duplicate [0], Delay [0].
+At time[1.5], Node[0] , Introducing channel error with code= [0010].
+At time [2], Node[0] [sent] frame with seq_num=[1] and payload=[$created by British author/$ Sir Arthur Conan Doyle.$] and trailer=[01110100] , Modified [-1] , Lost[No], Duplicate [1], Delay [0].
+At time [2.1], Node[0] [sent] frame with seq_num=[1] and payload=[$created by British author/$ Sir Arthur Conan Doyle.$] and trailer=[01110100] , Modified [-1] , Lost[No], Duplicate [1], Delay [0].
+At time[2], Node[0] , Introducing channel error with code= [0100].
+At time [2.5], Node[0] [sent] frame with seq_num=[2] and payload=[] and trailer=[01001000] , Modified [-1] , Lost[No], Duplicate [0], Delay [0].
+At time[2.5], Node[0] , Introducing channel error with code= [0000].
+At time [3], Node[0] [sent] frame with seq_num=[3] and payload=[$Holmes is known for his proficiency with observation,$] and trailer=[00001000] , Modified [-1] , Lost[No], Duplicate [0], Delay [0].
+Uploading payload=[Sherlock Holmes is a fictional detective] and seq_num =[0] to the network layer
+At time[3], Node[1] Sending [ACK] with number [1] , loss [No]
+Uploading payload=[created by British author$ Sir Arthur Conan Doyle.] and seq_num =[1] to the network layer
+At time[3.5], Node[1] Sending [ACK] with number [2] , loss [No]
+At time[4.5], Node[1] Sending [NACK] with number [2] , loss [No]
+At time[4], Node[0] , Introducing channel error with code= [0000].
+At time [4.5], Node[0] [sent] frame with seq_num=[4] and payload=[$deduction, forensic science,$] and trailer=[01011100] , Modified [-1] , Lost[No], Duplicate [0], Delay [0].
+At time[4.5], Node[0] , Introducing channel error with code= [0000].
+At time [5], Node[0] [sent] frame with seq_num=[5] and payload=[$and// logical reasoning/$ that borders on the fantastic,$] and trailer=[00001010] , Modified [-1] , Lost[No], Duplicate [0], Delay [0].
+At time [6], Node[0] [sent] frame with seq_num=[2] and payload=[$Referring to himself as a// "consulting detective" in the stories,$] and trailer=[01001000] , Modified [-1] , Lost[No], Duplicate [0], Delay [0].
+At time[6], Node[1] Sending [ACK] with number [2] , loss [No]
+At time[6.5], Node[1] Sending [ACK] with number [2] , loss [No]
+Uploading payload=[Referring to himself as a/ "consulting detective" in the stories,] and seq_num =[2] to the network layer
+Uploading payload=[Holmes is known for his proficiency with observation,] and seq_num =[3] to the network layer
+Uploading payload=[deduction, forensic science,] and seq_num =[4] to the network layer
+Uploading payload=[and/ logical reasoning$ that borders on the fantastic,] and seq_num =[5] to the network layer
+At time[7.501], Node[1] Sending [ACK] with number [6] , loss [No]
+At time[8.501], Node[0] , Introducing channel error with code= [0101].
+At time [9.001], Node[0] [sent] frame with seq_num=[6] and payload=[$which he employs when investigating cases for a wide variety of clients,$] and trailer=[00001010] , Modified [-1] , Lost[Yes], Duplicate [1], Delay [1].
+At time[9.001], Node[0] , Introducing channel error with code= [0000].
+At time [9.501], Node[0] [sent] frame with seq_num=[7] and payload=[$including Scotland Yard.$] and trailer=[00000000] , Modified [-1] , Lost[No], Duplicate [0], Delay [0].
+At time[11.001], Node[1] Sending [NACK] with number [6] , loss [No]
+At time [12.501], Node[0] [sent] frame with seq_num=[6] and payload=[$which he employs when investigating cases for a wide variety of clients,$] and trailer=[00001010] , Modified [-1] , Lost[No], Duplicate [0], Delay [0].
+Uploading payload=[which he employs when investigating cases for a wide variety of clients,] and seq_num =[6] to the network layer
+Uploading payload=[including Scotland Yard.] and seq_num =[7] to the network layer
+At time[14.002], Node[1] Sending [ACK] with number [0] , loss [No]

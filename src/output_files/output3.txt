@@ -1,0 +1,23 @@
+At time[1], Node[0] , Introducing channel error with code= [0001].
+At time [1.5], Node[0] [sent] frame with seq_num=[0] and payload=[$A cherry blossom is a flower of many trees of genus/$ Prunus or Prunus subg.$] and trailer=[00111010] , Modified [-1] , Lost[No], Duplicate [0], Delay [1].
+At time[1.5], Node[0] , Introducing channel error with code= [0011].
+At time [2], Node[0] [sent] frame with seq_num=[1] and payload=[$They are also known as Japanese cherry and Sakura$] and trailer=[01110100] , Modified [-1] , Lost[No], Duplicate [1], Delay [1].
+At time [2.1], Node[0] [sent] frame with seq_num=[1] and payload=[$They are also known as Japanese cherry and Sakura$] and trailer=[01110100] , Modified [-1] , Lost[No], Duplicate [1], Delay [1].
+At time[2], Node[0] , Introducing channel error with code= [0000].
+At time [2.5], Node[0] [sent] frame with seq_num=[2] and payload=[$They generally refer to /$ ornamental cherry trees,$] and trailer=[01111110] , Modified [-1] , Lost[No], Duplicate [0], Delay [0].
+At time[2.5], Node[0] , Introducing channel error with code= [0000].
+At time [3], Node[0] [sent] frame with seq_num=[3] and payload=[$not to be confused with cherry trees that// produce fruit for eating.$] and trailer=[00110000] , Modified [-1] , Lost[No], Duplicate [0], Delay [0].
+At time[4], Node[1] Sending [NACK] with number [0] , loss [No]
+At time[4.5], Node[1] Sending [ACK] with number [0] , loss [No]
+At time [5.5], Node[0] [sent] frame with seq_num=[0] and payload=[$A cherry blossom is a flower of many trees of genus/$ Prunus or Prunus subg.$] and trailer=[00111010] , Modified [-1] , Lost[No], Duplicate [0], Delay [0].
+Uploading payload=[A cherry blossom is a flower of many trees of genus$ Prunus or Prunus subg.] and seq_num =[0] to the network layer
+At time[7], Node[1] Sending [ACK] with number [1] , loss [No]
+Uploading payload=[They are also known as Japanese cherry and Sakura] and seq_num =[1] to the network layer
+Uploading payload=[They generally refer to $ ornamental cherry trees,] and seq_num =[2] to the network layer
+Uploading payload=[not to be confused with cherry trees that/ produce fruit for eating.] and seq_num =[3] to the network layer
+At time[7.5], Node[1] Sending [ACK] with number [4] , loss [No]
+At time[8], Node[0] , Introducing channel error with code= [1000].
+At time [8.5], Node[0] [sent] frame with seq_num=[4] and payload=[$It is considered0/ the national flower of Japan.$] and trailer=[00001110] , Modified [17] , Lost[No], Duplicate [0], Delay [0].
+At time [9], Node[0] [sent] frame with seq_num=[4] and payload=[$It is considered// the national flower of Japan.$] and trailer=[00001110] , Modified [-1] , Lost[No], Duplicate [0], Delay [0].
+Uploading payload=[It is considered/ the national flower of Japan.] and seq_num =[4] to the network layer
+At time[10.5], Node[1] Sending [ACK] with number [5] , loss [No]
